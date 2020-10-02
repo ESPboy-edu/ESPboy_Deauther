@@ -37,6 +37,7 @@
 // #define DEAUTHER_MINI
 // #define LYASI_7W_E27_LAMP
 // #define AVATAR_5W_E14_LAMP
+#define ESPBOY_VERSION
 
 // Forces formatting of SPIFFS and EEPROM ot startup
 // #define FORMAT_SPIFFS
@@ -46,7 +47,27 @@
 // #define RESET_SETTINGS
 
 // ========== CONFIGS ========== //
-#if defined(D_DUINO_B_V5_LED_RING)
+#if defined(ESPBOY_VERSION)
+
+  #define TFT_ESPI
+  #define FLIP_DIPLAY false
+  #define DISPLAY_TEXT "Hardware by SOKOLOV"
+
+  #define NEOPIXEL_LED
+  #define LED_NEOPIXEL_RGB
+  #define LED_NEOPIXEL_NUM 1
+  #define LED_NEOPIXEL_PIN D4
+
+  #define BUTTON_UP 1
+  #define BUTTON_DOWN 2
+  #define BUTTON_A 4
+  #define BUTTON_B 5
+
+	#define csTFTMCP23017pin      8
+	#define MCP4725address        0
+	#define MCP23017address       0 // actually it's 0x20 but in <Adafruit_MCP23017.h> lib there is (x|0x20) :)
+  
+#elif defined(D_DUINO_B_V5_LED_RING)
 
 // ===== LED ===== //
   #define LED_NEOPIXEL_GRB
@@ -289,7 +310,7 @@
 
 // ===== ACCESS POINT ===== //
 #ifndef AP_SSID
-  #define AP_SSID "pwned"
+  #define AP_SSID "deauther"
 #endif /* ifndef AP_SSID */
 
 #ifndef AP_PASSWD
@@ -392,7 +413,7 @@
   #define FLIP_DIPLAY false
 #endif /* ifndef FLIP_DIPLAY */
 
-#if !defined(SSD1306_I2C) && !defined(SSD1306_SPI) && !defined(SH1106_I2C) && !defined(SH1106_SPI)
+#if !defined(SSD1306_I2C) && !defined(SSD1306_SPI) && !defined(SH1106_I2C) && !defined(SH1106_SPI) && !defined(TFT_ESPI)
   #define SSD1306_I2C
   #define USE_DISPLAY false
 #else /* if !defined(SSD1306_I2C) && !defined(SSD1306_SPI) && !defined(SH1106_I2C) && !defined(SH1106_SPI) */

@@ -259,6 +259,7 @@ bool Scan::apWithChannel(uint8_t ch) {
 }
 
 void Scan::save(bool force, String filePath) {
+    (void)force;
     String tmp = FILE_PATH;
 
     FILE_PATH = filePath;

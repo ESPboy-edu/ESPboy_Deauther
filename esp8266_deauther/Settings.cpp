@@ -14,9 +14,20 @@ bool operator==(version_t a, version_t b) {
     return a.major == b.major && a.minor == b.minor && a.revision == b.revision;
 }
 
+void jsonStrP(String& str, const char* name, const char* value) {
+    str += '"';
+    str += String(FPSTR(name));
+    str += '"';
+    str += ':';
+    str += '"';
+    str += String(FPSTR(value));
+    str += '"';
+    str += ',';
+}
+
 void jsonStr(String& str, const char* name, const char* value) {
     str += '"';
-    str += String(name);
+    str += String(FPSTR(name));
     str += '"';
     str += ':';
     str += '"';
@@ -27,16 +38,16 @@ void jsonStr(String& str, const char* name, const char* value) {
 
 void jsonFlag(String& str, const char* name, bool value) {
     str += '"';
-    str += String(name);
+    str += String(FPSTR(name));
     str += '"';
     str += ':';
-    str += value ? String(S_JSON_TRUE) : String(S_JSON_FALSE);
+    str += value ? String(FPSTR(S_JSON_TRUE)) : String(FPSTR(S_JSON_FALSE));
     str += ',';
 }
 
 void jsonValue(String& str, const char* name, int value) {
     str += '"';
-    str += String(name);
+    str += String(FPSTR(name));
     str += '"';
     str += ':';
     str += String(value);
@@ -45,7 +56,7 @@ void jsonValue(String& str, const char* name, int value) {
 
 void jsonHex(String& str, const char* name, uint8_t* byteArr, int len) {
     str += '"';
-    str += String(name);
+    str += String(FPSTR(name));
     str += '"';
     str += ':';
 
@@ -63,7 +74,7 @@ void jsonHex(String& str, const char* name, uint8_t* byteArr, int len) {
 
 void jsonDec(String& str, const char* name, uint8_t* byteArr, int len) {
     str += '"';
-    str += String(name);
+    str += String(FPSTR(name));
     str += '"';
     str += ':';
 
@@ -94,7 +105,7 @@ String Settings::getJsonStr() {
     str += '{';
 
     // Version
-    jsonStr(str, S_JSON_VERSION, DEAUTHER_VERSION);
+    jsonStrP(str, S_JSON_VERSION, DEAUTHER_VERSION);
 
     // Autosave
     jsonFlag(str, S_JSON_AUTOSAVE, data.autosave.enabled);

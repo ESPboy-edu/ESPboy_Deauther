@@ -2,6 +2,8 @@
 
 // ===== adjustable ===== //
 void DisplayUI::configInit() {
+
+  #if !defined(ESPBOY_VERSION)
     // initialize display
     display.init();
 
@@ -18,34 +20,110 @@ void DisplayUI::configInit() {
 
     display.clear();
     display.display();
+  #else
+	  mcp.begin(MCP23017address);
+	  delay(100);
+
+	  for (int i = 0; i < 8; ++i) {
+  	  mcp.pinMode(i, INPUT);
+  	  mcp.pullUp(i, HIGH);
+	  }
+
+  // LED init
+  mcp.pinMode(LEDLOCK, OUTPUT);
+  mcp.digitalWrite(LEDLOCK, HIGH);
+  
+
+  // Sound init and test
+	  pinMode(SOUNDPIN, OUTPUT);
+	  tone(SOUNDPIN, 200, 100);
+	  delay(100);
+	  tone(SOUNDPIN, 100, 100);
+	  delay(100);
+	  noTone(SOUNDPIN);
+
+	  // TFT init
+	  mcp.pinMode(CSTFTPIN, OUTPUT);
+	  mcp.digitalWrite(CSTFTPIN, LOW);
+	  tft.begin();
+	  delay(100);
+	  tft.setRotation(0);
+	  tft.fillScreen(TFT_BLACK);
+
+      // draw ESPboylogo
+    tft.drawXBitmap(30, 20, ESPboyLogo, 68, 64, TFT_YELLOW);
+    tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+    tft.drawString("Deauther", 42, 95);
+    delay(1500);
+    
+    prnt("SCREEN INIT;");
+  #endif
 }
 
 void DisplayUI::configOn() {
+  #if !defined(ESPBOY_VERSION)
     display.displayOn();
+  #else
+  #endif
 }
 
 void DisplayUI::configOff() {
+  #if !defined(ESPBOY_VERSION)
     display.displayOff();
+  #else
+  #endif
 }
 
 void DisplayUI::updatePrefix() {
+  #if !defined(ESPBOY_VERSION)
     display.clear();
+  #else
+  #endif
 }
 
 void DisplayUI::updateSuffix() {
+  #if !defined(ESPBOY_VERSION)
     display.display();
+  #else
+  #endif
 }
 
 void DisplayUI::drawString(int x, int y, String str) {
+  #if !defined(ESPBOY_VERSION)
     display.drawString(x, y, replaceUtf8(str, String(QUESTIONMARK)));
+  #else
+		tft.setTextWrap(false, false);
+		tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+		tft.setCursor(x, y);
+		tft.print(replaceUtf8(str, String(QUESTIONMARK)+" "));
+  #endif
 }
 
 void DisplayUI::drawString(int row, String str) {
+  #if !defined(ESPBOY_VERSION)
     drawString(0, row * lineHeight, str);
+  #else
+		tft.setTextWrap(false, false);
+		tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+		tft.setCursor(0, row * lineHeight);
+		tft.print(replaceUtf8(str, String(QUESTIONMARK)));
+  #endif
 }
 
 void DisplayUI::drawLine(int x1, int y1, int x2, int y2) {
+  #if !defined(ESPBOY_VERSION)
     display.drawLine(x1, y1, x2, y2);
+  #else
+    tft.drawLine(x1, y1, x2, y2, TFT_YELLOW);
+  #endif
+}
+
+void DisplayUI::drawVLine(int x, int y, int h, unsigned int color) {
+  #if !defined(ESPBOY_VERSION)
+    display.drawLine(x, y, x, y1 + h, color);
+  #else
+    tft.drawFastVLine(x, y, h, color);
+  #endif
 }
 
 // ====================== //
@@ -78,8 +156,10 @@ void DisplayUI::setup() {
 
         addMenuNode(&mainMenu, D_CLOCK, [this]() { // PACKET MONITOR
             mode = DISPLAY_MODE::CLOCK;
+#if !defined(ESPBOY_VERSION)
             display.setFont(ArialMT_Plain_24);
             display.setTextAlignment(TEXT_ALIGN_CENTER);
+#endif
         });
 
 #ifdef HIGHLIGHT_LED
@@ -494,16 +574,26 @@ void DisplayUI::off() {
 }
 
 void DisplayUI::setupButtons() {
+  #if !defined(ESPBOY_VERSION)
     up   = new ButtonPullup(BUTTON_UP);
     down = new ButtonPullup(BUTTON_DOWN);
     a    = new ButtonPullup(BUTTON_A);
     b    = new ButtonPullup(BUTTON_B);
+  #else
+    GPIOExpander* exp = new MCP23017(0x20);
+
+    up   = new ButtonPullupGPIOExpander(exp, BUTTON_UP);
+    down = new ButtonPullupGPIOExpander(exp, BUTTON_DOWN);
+    a    = new ButtonPullupGPIOExpander(exp, BUTTON_A);
+    b    = new ButtonPullupGPIOExpander(exp, BUTTON_B);
+  #endif
 
     // === BUTTON UP === //
     up->setOnClicked([this]() {
         scrollCounter = 0;
         scrollTime    = currentTime;
         buttonTime    = currentTime;
+				needUpdate    = true;
 
         if (!tempOff) {
             if (mode == DISPLAY_MODE::MENU) {                 // when in menu, go up or down with cursor
@@ -521,6 +611,7 @@ void DisplayUI::setupButtons() {
         scrollCounter = 0;
         scrollTime    = currentTime;
         buttonTime    = currentTime;
+				needUpdate = true;
         if (!tempOff) {
             if (mode == DISPLAY_MODE::MENU) {                 // when in menu, go up or down with cursor
                 if (currentMenu->selected > 0) currentMenu->selected--;
@@ -538,6 +629,7 @@ void DisplayUI::setupButtons() {
         scrollCounter = 0;
         scrollTime    = currentTime;
         buttonTime    = currentTime;
+				needUpdate    = true;
         if (!tempOff) {
             if (mode == DISPLAY_MODE::MENU) {                 // when in menu, go up or down with cursor
                 if (currentMenu->selected < currentMenu->list->size() - 1) currentMenu->selected++;
@@ -554,6 +646,7 @@ void DisplayUI::setupButtons() {
         scrollCounter = 0;
         scrollTime    = currentTime;
         buttonTime    = currentTime;
+				needUpdate    = true;
         if (!tempOff) {
             if (mode == DISPLAY_MODE::MENU) {                 // when in menu, go up or down with cursor
                 if (currentMenu->selected < currentMenu->list->size() - 1) currentMenu->selected++;
@@ -573,6 +666,7 @@ void DisplayUI::setupButtons() {
         scrollCounter = 0;
         scrollTime    = currentTime;
         buttonTime    = currentTime;
+				needUpdate    = true;
         if (!tempOff) {
             switch (mode) {
                 case DISPLAY_MODE::MENU:
@@ -590,8 +684,10 @@ void DisplayUI::setupButtons() {
 
                 case DISPLAY_MODE::CLOCK:
                     mode = DISPLAY_MODE::MENU;
+#if !defined(ESPBOY_VERSION)
                     display.setFont(DejaVu_Sans_Mono_12);
                     display.setTextAlignment(TEXT_ALIGN_LEFT);
+#endif
                     break;
             }
         }
@@ -601,6 +697,7 @@ void DisplayUI::setupButtons() {
         scrollCounter = 0;
         scrollTime    = currentTime;
         buttonTime    = currentTime;
+				needUpdate    = true;
         if (!tempOff) {
             if (mode == DISPLAY_MODE::MENU) {
                 if (currentMenu->list->get(currentMenu->selected).hold) {
@@ -615,6 +712,7 @@ void DisplayUI::setupButtons() {
         scrollCounter = 0;
         scrollTime    = currentTime;
         buttonTime    = currentTime;
+				needUpdate    = true;
         if (!tempOff) {
             switch (mode) {
                 case DISPLAY_MODE::MENU:
@@ -629,8 +727,10 @@ void DisplayUI::setupButtons() {
 
                 case DISPLAY_MODE::CLOCK:
                     mode = DISPLAY_MODE::MENU;
+#if !defined(ESPBOY_VERSION)
                     display.setFont(DejaVu_Sans_Mono_12);
                     display.setTextAlignment(TEXT_ALIGN_LEFT);
+#endif
                     break;
             }
         }
@@ -648,12 +748,20 @@ void DisplayUI::draw() {
     if ((currentTime - drawTime > drawInterval) && currentMenu) {
         drawTime = currentTime;
 
-        updatePrefix();
-
         if (clockTime < currentTime - 1000) {
             setTime(clockHour, clockMinute++, clockSecond + 1);
             clockTime += 1000;
         }
+
+        updatePrefix();
+
+#if defined(ESPBOY_VERSION)
+				if(mode != prevMode || needUpdate) {
+					 tft.fillScreen(TFT_BLACK);
+					 needUpdate = false;
+				}
+			 prevMode = mode;
+#endif
 
         switch (mode) {
             case DISPLAY_MODE::BUTTON_TEST:
@@ -661,12 +769,12 @@ void DisplayUI::draw() {
                 break;
 
             case DISPLAY_MODE::MENU:
-                drawMenu();
+	              drawMenu();
                 break;
 
             case DISPLAY_MODE::LOADSCAN:
-                drawLoadingScan();
-                break;
+		            drawLoadingScan();
+	              break;
 
             case DISPLAY_MODE::PACKETMONITOR:
                 drawPacketMonitor();
@@ -675,6 +783,7 @@ void DisplayUI::draw() {
             case DISPLAY_MODE::INTRO:
                 if (currentTime - startTime >= screenIntroTime) {
                     mode = DISPLAY_MODE::MENU;
+										break;
                 }
                 drawIntro();
                 break;
@@ -683,7 +792,7 @@ void DisplayUI::draw() {
                 break;
         }
 
-        updateSuffix();
+       updateSuffix();
     }
 }
 
@@ -697,14 +806,14 @@ void DisplayUI::drawButtonTest() {
 void DisplayUI::drawMenu() {
     String tmp;
     int    tmpLen;
-    int    row = (currentMenu->selected / 5) * 5;
+    int    row = (currentMenu->selected / linesMax) * linesMax;
 
     // correct selected if it's off
     if (currentMenu->selected < 0) currentMenu->selected = 0;
     else if (currentMenu->selected >= currentMenu->list->size()) currentMenu->selected = currentMenu->list->size() - 1;
 
     // draw menu entries
-    for (int i = row; i < currentMenu->list->size() && i < row + 5; i++) {
+    for (int i = row; i < currentMenu->list->size() && i < row + linesMax; i++) {
         tmp    = currentMenu->list->get(i).getStr();
         tmpLen = tmp.length();
 
@@ -722,7 +831,7 @@ void DisplayUI::drawMenu() {
         }
 
         tmp = (currentMenu->selected == i ? CURSOR : SPACE) + tmp;
-        drawString(0, (i - row) * 12, tmp);
+        drawString(0, (i - row) * lineHeight, tmp);
     }
 }
 
@@ -743,9 +852,10 @@ void DisplayUI::drawLoadingScan() {
 }
 
 void DisplayUI::drawPacketMonitor() {
-    double scale = scan.getScaleFactor(sreenHeight - lineHeight - 2);
+    double scale = scan.getScaleFactor(screenHeight - lineHeight - 2);
 
     String headline = leftRight(str(D_CH) + getChannel() + String(' ') + String('[') + String(scan.deauths) + String(']'), String(scan.getPacketRate()) + str(D_PKTS), maxLen);
+
 
     drawString(0, 0, headline);
 
@@ -755,16 +865,25 @@ void DisplayUI::drawPacketMonitor() {
         int y = 0;
 
         while (i < SCAN_PACKET_LIST_SIZE && x < screenWidth) {
-            y = (sreenHeight-1) - (scan.getPackets(i) * scale);
+            y = (screenHeight-1) - (scan.getPackets(i) * scale);
             i++;
 
-            // Serial.printf("%d,%d -> %d,%d\n", x, (sreenHeight-1), x, y);
-            drawLine(x, (sreenHeight-1), x, y);
+#if !defined(ESPBOY_VERSION)
+            drawLine(x, (screenHeight-1), x, y);
             x++;
-
-            // Serial.printf("%d,%d -> %d,%d\n", x, (sreenHeight-1), x, y);
-            drawLine(x, (sreenHeight-1), x, y);
+            drawLine(x, (screenHeight-1), x, y);
             x++;
+#else
+						tft.fillRect(x, lineHeight + 1, 2, y - lineHeight + 1, TFT_BLACK);
+						tft.fillRect(x, y, 2, (screenHeight-1)-y, TFT_YELLOW);
+            x+=2;
+//            drawVLine(x, lineHeight + 1, y - lineHeight + 1, TFT_BLACK);
+//            drawVLine(x, y, (screenHeight-1)-y, TFT_YELLOW);
+//            x++;
+//            drawVLine(x, lineHeight + 1, y - lineHeight + 1, TFT_BLACK);
+//            drawVLine(x, y, (screenHeight-1)-y, TFT_YELLOW);
+//            x++;
+#endif
         }
         // Serial.println("---------");
     }
@@ -785,7 +904,7 @@ void DisplayUI::drawClock() {
     if (clockMinute < 10) clockTime += '0';
     clockTime += String(clockMinute);
 
-    display.drawString(64, 20, clockTime);
+    this->drawString(64, 20, clockTime);
 }
 
 void DisplayUI::clearMenu(Menu* menu) {

@@ -10,7 +10,22 @@
 #include "Attack.h"
 
 // ===== adjustable ===== //
-#if defined(SSD1306_I2C)
+#if defined(TFT_ESPI)
+  
+	#define FS_NO_GLOBALS
+
+  #include <Adafruit_MCP23017.h>
+  #include <TFT_eSPI.h>
+  #include "lib/ESPboyLogo.h"
+  
+	// actually it's 0x20 but in <Adafruit_MCP23017.h> lib there is (x|0x20) :)
+	#define MCP23017address 0  
+	#define LEDPIN D4
+	#define SOUNDPIN D3
+	#define CSTFTPIN 8  // CS MCP23017 PIN to TFT
+  #define LEDLOCK 9
+  
+#elif defined(SSD1306_I2C)
   #include <Wire.h>
   #include <SSD1306Wire.h>
 #elif defined(SSD1306_SPI)
@@ -24,7 +39,7 @@
   #include <SH1106Spi.h>
 #endif /* if defined(SSD1306_I2C) */
 
-#include <SimpleButton.h>
+#include "src/SimpleButton.h"
 
 using namespace simplebutton;
 
@@ -67,6 +82,8 @@ class DisplayUI {
         enum DISPLAY_MODE { OFF = 0, BUTTON_TEST = 1, MENU = 2, LOADSCAN = 3, PACKETMONITOR = 4, INTRO = 5, CLOCK = 6 };
 
         uint8_t mode         = DISPLAY_MODE::MENU;
+        uint8_t prevMode     = OFF;
+
         bool    highlightLED = false;
 
         Button* up   = NULL;
@@ -75,7 +92,10 @@ class DisplayUI {
         Button* b    = NULL;
 
         // ===== adjustable ===== //
-#if defined(SSD1306_I2C)
+#if defined(TFT_ESPI)
+        Adafruit_MCP23017 mcp;
+        TFT_eSPI tft = TFT_eSPI();
+#elif defined(SSD1306_I2C)
         SSD1306Wire display = SSD1306Wire(I2C_ADDR, I2C_SDA, I2C_SCL);
 #elif defined(SSD1306_SPI)
         SSD1306Spi display = SSD1306Spi(SPI_RES, SPI_DC, SPI_CS);
@@ -85,14 +105,22 @@ class DisplayUI {
         SH1106Spi display = SH1106Spi(SPI_RES, SPI_DC, SPI_CS);
 #endif /* if defined(SSD1306_I2C) */
 
-        const uint8_t  maxLen          = 18;
-        const uint8_t  lineHeight      = 12;
         const uint8_t  buttonDelay     = 250;
         const uint8_t  drawInterval    = 100; // 100ms = 10 FPS
         const uint16_t scrollSpeed     = 500; // time interval in ms
         const uint16_t screenIntroTime = 2500;
         const uint16_t screenWidth     = 128;
-        const uint16_t sreenHeight     = 64;
+#if defined(TFT_ESPI)
+        const uint16_t screenHeight    = 128;
+				const uint16_t lineHeight      = 10;
+				const uint16_t symbolWidth     = 6;
+#else
+        const uint16_t screenHeight    = 64;
+				const uint16_t lineHeight      = 12;
+				const uint16_t symbolWidth     = 7;
+#endif
+        const uint8_t  maxLen          = screenWidth / symbolWidth;
+				const uint16_t linesMax        = screenHeight / lineHeight;
 
         void configInit();
         void configOn();
@@ -102,6 +130,9 @@ class DisplayUI {
         void drawString(int x, int y, String str);
         void drawString(int row, String str);
         void drawLine(int x1, int y1, int x2, int y2);
+#if defined(TFT_ESPI)
+				void drawVLine(int x, int y, int h, unsigned int color);
+#endif
         // ====================== //
 
         DisplayUI();
@@ -124,6 +155,8 @@ class DisplayUI {
         uint32_t drawTime   = 0;   // last time a frame was drawn
         uint32_t startTime  = 0;   // when the screen was enabled
         uint32_t buttonTime = 0;   // last time a button was pressed
+
+				bool needUpdate = true;
 
         bool enabled = false;      // display enabled
         bool tempOff = false;
@@ -186,6 +219,8 @@ class DisplayUI {
 
         uint32_t clockTime = 0;
 };
+
+#if !defined(TFT_ESPI)
 
 // ===== FONT ===== //
 // Created by http://oleddisplay.squix.ch/ Consider a donation
@@ -646,5 +681,6 @@ const uint8_t DejaVu_Sans_Mono_12[] PROGMEM = {
     0x00, 0x00, 0xFC, 0x7F, 0x20, 0x08, 0x20, 0x08, 0x20, 0x08, 0xC0, 0x07,             // 254
     0x00, 0x00, 0x60, 0x40, 0x88, 0x67, 0x00, 0x1C, 0x88, 0x03, 0x60                    // 255
 };
+#endif // if !defined(TFT_ESPI)
 
 #endif // ifndef DisplayUI_h

@@ -1,4 +1,12 @@
 /*
+ESP8266 Deauther 2.0 port for ESPboy project by Dmitry (Plague)
+www.espboy.com
+https://github.com/SpacehuhnTech/esp8266_deauther
+Use Arduino IDE and Deauther SDK to compile
+*/
+
+
+/*
    ===========================================
       Copyright (c) 2018 Stefan Kremser
              github.com/spacehuhn

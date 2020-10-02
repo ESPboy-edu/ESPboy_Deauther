@@ -277,7 +277,7 @@ bool Attack::deauthName(int num) {
 bool Attack::deauthDevice(uint8_t* apMac, uint8_t* stMac, uint8_t reason, uint8_t ch) {
     if (!stMac) return false;  // exit when station mac is null
 
-    // Serial.println("Deauthing "+macToStr(apMac)+" -> "+macToStr(stMac)); // for debugging
+    //Serial.println("Deauthing "+macToStr(apMac)+" -> "+macToStr(stMac)); // for debugging
 
     bool success = false;
 
