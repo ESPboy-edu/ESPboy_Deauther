@@ -1,4 +1,4 @@
-# ESP8266 Deauther 2.0 port for ESPboy project by Dmitry (Plague)
+# ESP8266 Deauther 2.0 port by Dmitry (Plague) for ESPboy project
 
 www.espboy.com
 
